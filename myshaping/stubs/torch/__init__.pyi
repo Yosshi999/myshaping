@@ -1,0 +1,3 @@
+from torch._tensor import Tensor
+
+def randn(*size: int, **kwargs) -> Tensor: ...
