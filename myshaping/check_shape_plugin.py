@@ -4,65 +4,6 @@ from mypy.plugin import Plugin, FunctionContext, AnalyzeTypeContext
 from mypy.types import Instance, TupleType, Type, UnboundType, LiteralType
 
 
-# class Dim:
-#     def is_static(self) -> bool:
-#         return True
-#     @property
-#     def value(self) -> Any:
-#         return None
-
-# class IntDim(Dim):
-#     def __init__(self, value: int):
-#         self._value = value
-#     def is_static(self) -> bool:
-#         return True
-#     @property
-#     def value(self) -> int:
-#         return self._value
-
-# class SymbolicDim(Dim):
-#     def __init__(self, name: str):
-#         self._name = name
-#     def is_static(self) -> bool:
-#         return False
-#     @property
-#     def value(self) -> str:
-#         return self._name
-
-# class UnknownDim(Dim):
-#     def is_static(self) -> bool:
-#         return False
-#     @property
-#     def value(self):
-#         return None
-
-# Shape = List[Dim]
-# TensorInfo = Tuple[str, Shape]  # (dtype, shape)
-
-# def parse_shape(shape_str: str) -> Shape:
-#     symbols = shape_str.split()
-#     parsed_symbols: List[Dim] = []
-#     for s in symbols:
-#         s = re.sub(r'.*=', '', s)  # Remove any assignments like "x=3"
-#         if s.isdigit():
-#             parsed_symbols.append(IntDim(int(s)))
-#         else:
-#             if re.match(r'^_\w*$', s):
-#                 parsed_symbols.append(UnknownDim())
-#             elif re.match(r'^[a-zA-Z_]\w*$', s):
-#                 parsed_symbols.append(SymbolicDim(s))
-#             elif re.match(r'^\*[a-zA-Z_]\w*$', s):
-#                 # multiple axis not supported
-#                 raise NotImplementedError
-#             elif re.match(r'^\#[a-zA-Z_]\w*$', s):
-#                 # broadcastable axis not supported
-#                 parsed_symbols.append(SymbolicDim(s[1:]))  # Remove leading '#'
-#             else:
-#                 # Handle unexpected formats
-#                 raise ValueError(f"Unexpected shape format: {s}")
-#     return parsed_symbols
-
-
 class ShapePlugin(Plugin):
     jaxtyping_names = set([
         "jaxtyping._array_types.UInt2",
