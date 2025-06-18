@@ -171,6 +171,7 @@ source = { editable = "." }
 dependencies = [
     { name = "jaxtyping" },
     { name = "mypy" },
+    { name = "mypy-extensions" },
     { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
     { name = "numpy", version = "2.3.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
     { name = "torch" },
@@ -180,6 +181,7 @@ dependencies = [
 requires-dist = [
     { name = "jaxtyping", specifier = ">=0.3.2" },
     { name = "mypy", specifier = "==1.16.0" },
+    { name = "mypy-extensions", specifier = ">=1.1.0" },
     { name = "numpy", specifier = ">=2.2.6" },
     { name = "torch", specifier = ">=2.7.1" },
 ]

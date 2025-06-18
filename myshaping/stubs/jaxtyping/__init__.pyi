@@ -2,6 +2,7 @@
 from _typeshed import Incomplete
 from typing import TypeAlias
 from ._array_types import (
+    AbstractArray as AbstractArray,
     UInt2 as UInt2, 
     UInt4 as UInt4, 
     UInt8 as UInt8, 
@@ -26,16 +27,22 @@ from ._array_types import (
     Complex64 as Complex64, 
     Complex128 as Complex128, 
     Bool as Bool, 
-    UInt as UInt, 
-    Int as Int, 
-    Integer as Integer, 
-    Float as Float, 
-    Complex as Complex, 
-    Inexact as Inexact, 
-    Real as Real, 
-    Num as Num, 
-    Shaped as Shaped, 
-    Key as Key, 
+    # UInt as UInt, 
+    # Int as Int, 
+    # Integer as Integer, 
+    # Float as Float, 
+    # Complex as Complex, 
+    # Inexact as Inexact, 
+    # Real as Real, 
+    # Num as Num, 
+    # Shaped as Shaped,   # not supported
+    # Key as Key,   # not supported
+    _AnonymousDim as _AnonymousDim,
+    _AnonymousVariadicDim as _AnonymousVariadicDim,
+    _NamedDim as _NamedDim,
+    _NamedVariadicDim as _NamedVariadicDim,
+    _FixedDim as _FixedDim,
+    _SymbolicDim as _SymbolicDim,
 )
 
 PyTree: TypeAlias

@@ -1,7 +1,10 @@
 from typing import Any, Optional, List, Tuple
 import re
 from mypy.plugin import Plugin, FunctionContext, AnalyzeTypeContext
-from mypy.types import Instance, TupleType, Type, UnboundType, LiteralType
+from mypy.types import Instance, TupleType, Type, UnboundType, LiteralType, EllipsisType, RawExpressionType
+from mypy.checker import TypeChecker
+
+from myshaping.type_translator import construct_instance
 
 
 class ShapePlugin(Plugin):
@@ -55,12 +58,14 @@ class ShapePlugin(Plugin):
         return None
 
 def hook(ctx: FunctionContext):
-    breakpoint()
+    # breakpoint()
     # (Pdb) p ctx.context.callee.node.type.arg_types[0]
     # jaxtyping._array_types.Float64[Tensor?, Literal['3 224 224']]
     return ctx.default_return_type
 
 def torch_function_hook(ctx: FunctionContext):
+    if not isinstance(ctx.api, TypeChecker):
+        return ctx.default_return_type
     args = ctx.arg_types[0]
     dimensions: List[Type] = []
     if len(args) == 1 and isinstance(args[0], TupleType):
@@ -74,29 +79,27 @@ def torch_function_hook(ctx: FunctionContext):
     ) for dim in dimensions):
         # All dimensions are static integers
         shape_str = " ".join(str(dim.last_known_value.value) for dim in dimensions)
-        # return UnboundType(
-        #     "Float",
-        #     [ctx.default_return_type, LiteralType(value=shape_str, fallback=ctx.api.named_type("str"))]
-        # )
-        return Instance(
-            ctx.api.named_type("jaxtyping.Float").type,
-            [ctx.default_return_type, LiteralType(value=shape_str, fallback=ctx.api.named_type("builtins.str"))]
+        return construct_instance(
+            ctx.api,
+            "Float32",
+            ctx.api.named_type("torch.Tensor"),
+            shape_str
         )
     
     return ctx.default_return_type
 
 def analyze_jaxtyping(ctx: AnalyzeTypeContext):
-    """Rename Dtype[Array, "shape"] to Dtype[Array, Literal["shape"]], because raw string in the Generic is not allowed."""
-    try:
-        dtype = ctx.type.name
-        backend, shape = ctx.type.args
-        return Instance(
-            ctx.api.named_type("jaxtyping." + dtype).type,
-            [backend, LiteralType(value=shape.literal_value, fallback=ctx.api.named_type("builtins.str"))]
-        )
-    except Exception as e:
-        print(e)
+    """Parse Dtype[Array, "shape"] to the mypy-friendly type, because raw string in the Generic is not allowed."""
+    dtype = ctx.type.name
+    if len(ctx.type.args) != 2:
         return ctx.type
+    backend, shape = ctx.type.args
+    if not isinstance(shape, RawExpressionType) or shape.literal_value is None:
+        return ctx.type
+    backend = ctx.api.analyze_type(backend)
+    dim_str = shape.literal_value
+    print(dtype, backend, dim_str)
+    return construct_instance(ctx.api, dtype, backend, dim_str)
 
 def plugin(version: str):
     return ShapePlugin
