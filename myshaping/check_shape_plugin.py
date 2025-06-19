@@ -5,8 +5,9 @@ from mypy.types import Instance, TupleType, Type, UnboundType, LiteralType, Elli
 from mypy.checker import TypeChecker
 
 from myshaping.type_translator import construct_instance
-from myshaping.registry import register_type_analyze_hook, get_function_hook, get_type_analyze_hook
+from myshaping.registry import register_type_analyze_hook, get_function_hook, get_type_analyze_hook, get_method_hook
 import myshaping.torch_function_hooks
+import myshaping.tensor_method_hooks
 
 
 @register_type_analyze_hook(
@@ -73,6 +74,9 @@ class ShapePlugin(Plugin):
         if fullname.endswith(".f"):
             return hook
         return get_function_hook(fullname)
+    
+    def get_method_hook(self, fullname: str):
+        return get_method_hook(fullname)
 
 def plugin(version: str):
     return ShapePlugin

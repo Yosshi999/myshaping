@@ -8,7 +8,7 @@ from myshaping.function_helper import transpose_funcargs
 from myshaping.registry import register_function_hook
 
 
-dtype_mapper = {
+dtype_mapper = {  # mapping torch.dtype to jaxtyping type
     "float32": "Float32",
     "float": "Float32",
     "float64": "Float64",

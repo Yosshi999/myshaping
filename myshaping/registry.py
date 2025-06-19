@@ -1,6 +1,7 @@
 from typing import List, Callable, Optional
 FUNCTION_HOOKS = {}
 TYPE_ANALYZE_HOOKS = {}
+METHOD_HOOKS = {}
 
 def construct_registry(hooks: dict):
     def register(*names: str):
@@ -15,3 +16,4 @@ def construct_registry(hooks: dict):
 
 register_function_hook, get_function_hook = construct_registry(FUNCTION_HOOKS)
 register_type_analyze_hook, get_type_analyze_hook = construct_registry(TYPE_ANALYZE_HOOKS)
+register_method_hook, get_method_hook = construct_registry(METHOD_HOOKS)
