@@ -1,11 +1,11 @@
 from typing import Any, Optional, List, Tuple
 import re
 from mypy.plugin import Plugin, FunctionContext, AnalyzeTypeContext
-from mypy.types import Instance, TupleType, Type, UnboundType, LiteralType, EllipsisType, RawExpressionType
+from mypy.types import Instance, TupleType, Type, UnboundType, LiteralType, EllipsisType, RawExpressionType, TypeStrVisitor
 from mypy.checker import TypeChecker
 
-from myshaping.type_translator import construct_instance
-from myshaping.registry import register_type_analyze_hook, get_function_hook, get_type_analyze_hook, get_method_hook
+from myshaping.type_translator import construct_instance, repr_shape
+from myshaping.registry import register_type_analyze_hook, register_function_hook, get_function_hook, get_type_analyze_hook, get_method_hook
 import myshaping.torch_function_hooks
 import myshaping.tensor_method_hooks
 
@@ -59,6 +59,17 @@ def analyze_jaxtyping(ctx: AnalyzeTypeContext):
     print(dtype, backend, dim_str)
     return construct_instance(ctx.api, dtype, backend, dim_str)
 
+
+@register_function_hook("myshaping.reveal_jaxtype")
+def reveal(ctx: FunctionContext):
+    typ = ctx.arg_types[0][0]
+    if isinstance(typ, Instance) and typ.type.fullname.startswith("jaxtyping._array_types"):
+        result = repr_shape(typ, ctx.api.msg.options)
+    else:
+        visitor = TypeStrVisitor(options=ctx.api.msg.options)
+        result = typ.accept(visitor)
+    ctx.api.msg.note(f'Revealed type is "{result}"', ctx.context)
+    return ctx.default_return_type
 
 def hook(ctx: FunctionContext):
     # breakpoint()

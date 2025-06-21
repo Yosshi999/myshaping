@@ -1,7 +1,7 @@
 """Translate between jaxtyping annotations and mypy types."""
 
 from typing import List
-from mypy.types import Instance, TupleType, Type, UnboundType, LiteralType, EllipsisType, RawExpressionType, UnionType
+from mypy.types import Instance, TupleType, Type, UnboundType, LiteralType, EllipsisType, RawExpressionType, UnionType, TypeStrVisitor
 from mypy.plugin import TypeAnalyzerPluginInterface
 from jaxtyping._array_types import _DimType
 
@@ -211,3 +211,35 @@ def parse_shape(api: TypeAnalyzerPluginInterface, dim_str: str) -> List[Instance
             # elem = _SymbolicDim(elem, broadcastable)
         dims.append(parsed)
     return dims
+
+
+def repr_shape(typ: Instance, options):
+    assert typ.type.fullname.startswith("jaxtyping._array_types")
+    visitor = TypeStrVisitor(options=options)
+    dtype = typ.type.fullname.split(".")[-1]
+    backend: Instance = typ.args[0]
+    backend_name = backend.accept(visitor)
+    shape: TupleType = typ.args[1]
+    dims: list[str] = []
+    for arg in shape.items:
+        assert isinstance(arg, Instance)
+        match arg.type.fullname.split(".")[-1]:
+            case "_AnonymousDim":
+                dims.append("_")
+            case "_AnonymousVariadicDim":
+                dims.append("...")
+            case "_NamedDim":
+                lit: LiteralType = arg.args[0]
+                dims.append(str(lit.value))
+            case "_NamedVariadicDim":
+                lit: LiteralType = arg.args[0]
+                dims.append("*" + str(lit.value))
+            case "_FixedDim":
+                lit: LiteralType = arg.args[0]
+                dims.append(str(lit.value))
+            case "_SymbolicDim":
+                lit: LiteralType = arg.args[0]
+                dims.append(str(lit.value))
+    dim_str = " ".join(dims)
+    result = f"{dtype}[{backend}, '{dim_str}']"
+    return result
