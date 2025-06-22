@@ -4,7 +4,7 @@ from mypy.plugin import Plugin, FunctionContext, AnalyzeTypeContext
 from mypy.types import Instance, TupleType, Type, UnboundType, LiteralType, EllipsisType, RawExpressionType, TypeStrVisitor
 from mypy.checker import TypeChecker
 
-from myshaping.type_translator import construct_instance, repr_shape
+from myshaping.type_translator import construct_instance, repr_instance, parse_dimstr
 from myshaping.registry import register_type_analyze_hook, register_function_hook, get_function_hook, get_type_analyze_hook, get_method_hook
 import myshaping.torch_function_hooks
 import myshaping.tensor_method_hooks
@@ -56,7 +56,11 @@ def analyze_jaxtyping(ctx: AnalyzeTypeContext):
         return ctx.type
     backend = ctx.api.analyze_type(backend)
     dim_str = shape.literal_value
-    print(dtype, backend, dim_str)
+    try:
+        parse_dimstr(ctx.api, dim_str)
+    except ValueError as e:
+        ctx.api.fail(str(e), ctx.context)
+        return ctx.type
     return construct_instance(ctx.api, dtype, backend, dim_str)
 
 
@@ -64,7 +68,7 @@ def analyze_jaxtyping(ctx: AnalyzeTypeContext):
 def reveal(ctx: FunctionContext):
     typ = ctx.arg_types[0][0]
     if isinstance(typ, Instance) and typ.type.fullname.startswith("jaxtyping._array_types"):
-        result = repr_shape(typ, ctx.api.msg.options)
+        result = repr_instance(typ, ctx.api.msg.options)
     else:
         visitor = TypeStrVisitor(options=ctx.api.msg.options)
         result = typ.accept(visitor)

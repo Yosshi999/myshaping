@@ -1,6 +1,8 @@
 """Translate between jaxtyping annotations and mypy types."""
 
-from typing import List
+from dataclasses import dataclass
+import enum
+from typing import List, Any, Union
 from mypy.types import Instance, TupleType, Type, UnboundType, LiteralType, EllipsisType, RawExpressionType, UnionType, TypeStrVisitor
 from mypy.plugin import TypeAnalyzerPluginInterface
 from jaxtyping._array_types import _DimType
@@ -16,38 +18,61 @@ union_mapper = {
     "Num": ["Float", "Complex", "UInt", "Int"],
 }
 
-# FIXME: Impossible to use this because mypyc classes are compiled and cannot be used as base classes.
-# class JaxtypingInstance(Instance):
-#     def __init__(self, api: TypeAnalyzerPluginInterface, dtype: str, backend: Type, dim_str: str):
-#         super().__init__(
-#             api.named_type("jaxtyping." + dtype).type,
-#             [backend, TupleType(items=parse_shape(api, dim_str.strip()), fallback=api.named_type("builtins.tuple"))]
-#         )
-#         self.dtype_str = dtype
-#         self.backend_str = str(backend)
-#         self.dim_str = dim_str
-#     def __str__(self):
-#         return f"{self.dtype_str}[{self.backend_str}, {self.dim_str}]"
+class _DimType(enum.Enum):
+    named = enum.auto()
+    fixed = enum.auto()
+    symbolic = enum.auto()
+
+@dataclass(frozen=True)
+class AnonymousDim:
+    pass
+@dataclass(frozen=True)
+class AnonymousVariadicDim:
+    pass
+@dataclass(frozen=True)
+class NamedDim:
+    name: str
+    broadcastable: bool
+@dataclass(frozen=True)
+class NamedVariadicDim:
+    name: str
+    broadcastable: bool
+@dataclass(frozen=True)
+class FixedDim:
+    size: int
+@dataclass(frozen=True)
+class SymbolicDim:
+    elem: Any
+    broadcastable: bool
+
+AbstractDimOrVariadicDim = Union[
+    AnonymousDim,
+    AnonymousVariadicDim,
+    NamedDim,
+    NamedVariadicDim,
+    FixedDim,
+    SymbolicDim,
+]
 
 def construct_instance(api: TypeAnalyzerPluginInterface, dtype: str, backend: Type, dim_str: str) -> Type:
     """Construct an Instance of a jaxtyping type with the given dtype, backend, and shape."""
     if dtype in union_mapper:
         items = [
             Instance(
-                api.named_type("jaxtyping." + dtype).type,
-                [backend, TupleType(items=parse_shape(api, dim_str.strip()), fallback=api.named_type("builtins.tuple"))]
+                api.named_type(f"jaxtyping.{dtype}").type,
+                [backend, LiteralType(value=dim_str, fallback=api.named_type("builtins.str"))]
             )
             for dtype in union_mapper[dtype]
         ]
         return UnionType(items)
     return Instance(
-        api.named_type("jaxtyping." + dtype).type,
-        [backend, TupleType(items=parse_shape(api, dim_str.strip()), fallback=api.named_type("builtins.tuple"))]
+        api.named_type(f"jaxtyping.{dtype}").type,
+        [backend, LiteralType(value=dim_str, fallback=api.named_type("builtins.str"))]
     )
 
-def parse_shape(api: TypeAnalyzerPluginInterface, dim_str: str) -> List[Instance]:
+def parse_dimstr(api: TypeAnalyzerPluginInterface, dim_str: str) -> List[AbstractDimOrVariadicDim]:
     # Copied from jaxtyping/_array_types.py and modified to mypy languages.
-    dims = []
+    dims: List[AbstractDimOrVariadicDim] = []
     index_variadic = None
     for index, elem in enumerate(dim_str.split()):
         if "," in elem and "(" not in elem:
@@ -139,7 +164,7 @@ def parse_shape(api: TypeAnalyzerPluginInterface, dim_str: str) -> List[Instance
                 )
             index_variadic = index
 
-        parsed: Type
+        parsed: AbstractDimOrVariadicDim
         if dim_type is _DimType.fixed:
             if variadic:
                 raise ValueError(
@@ -155,13 +180,7 @@ def parse_shape(api: TypeAnalyzerPluginInterface, dim_str: str) -> List[Instance
                     "Cannot have a fixed axis have tree-path dependence, e.g. `?4` is "
                     "not allowed."
                 )
-            parsed = Instance(
-                api.named_type("jaxtyping._FixedDim").type,
-                [
-                    LiteralType(value=int(elem), fallback=api.named_type("builtins.int")),
-                    LiteralType(value=broadcastable, fallback=api.named_type("builtins.bool"))
-                ]
-            )
+            parsed = FixedDim(elem)
         elif dim_type is _DimType.named:
             if anonymous:
                 if broadcastable:
@@ -170,26 +189,14 @@ def parse_shape(api: TypeAnalyzerPluginInterface, dim_str: str) -> List[Instance
                         "broadcastable, e.g. `#_` is not allowed."
                     )
                 if variadic:
-                    parsed = api.named_type("jaxtyping._AnonymousVariadicDim")
+                    parsed = AnonymousVariadicDim()
                 else:
-                    parsed = api.named_type("jaxtyping._AnonymousDim")
+                    parsed = AnonymousDim()
             else:
                 if variadic:
-                    parsed = Instance(
-                        api.named_type("jaxtyping._NamedVariadicDim").type,
-                        [
-                            LiteralType(value=elem, fallback=api.named_type("builtins.str")),
-                            LiteralType(value=broadcastable, fallback=api.named_type("builtins.bool"))
-                        ]
-                    )
+                    parsed = NamedVariadicDim(elem, broadcastable=broadcastable)
                 else:
-                    parsed = Instance(
-                        api.named_type("jaxtyping._NamedDim").type,
-                        [
-                            LiteralType(value=elem, fallback=api.named_type("builtins.str")),
-                            LiteralType(value=broadcastable, fallback=api.named_type("builtins.bool"))
-                        ]
-                    )
+                    parsed = NamedDim(elem, broadcastable=broadcastable)
         else:
             assert dim_type is _DimType.symbolic
             if anonymous:
@@ -208,38 +215,16 @@ def parse_shape(api: TypeAnalyzerPluginInterface, dim_str: str) -> List[Instance
                     "`?foo+bar` is not allowed"
                 )
             raise NotImplementedError("Symbolic axes are not supported yet")
-            # elem = _SymbolicDim(elem, broadcastable)
+            # elem = SymbolicDim(elem, broadcastable)
         dims.append(parsed)
     return dims
 
 
-def repr_shape(typ: Instance, options):
+def repr_instance(typ: Instance, options):
     assert typ.type.fullname.startswith("jaxtyping._array_types")
     visitor = TypeStrVisitor(options=options)
     dtype = typ.type.fullname.split(".")[-1]
     backend: Instance = typ.args[0]
-    backend_name = backend.accept(visitor)
-    shape: TupleType = typ.args[1]
-    dims: list[str] = []
-    for arg in shape.items:
-        assert isinstance(arg, Instance)
-        match arg.type.fullname.split(".")[-1]:
-            case "_AnonymousDim":
-                dims.append("_")
-            case "_AnonymousVariadicDim":
-                dims.append("...")
-            case "_NamedDim":
-                lit: LiteralType = arg.args[0]
-                dims.append(str(lit.value))
-            case "_NamedVariadicDim":
-                lit: LiteralType = arg.args[0]
-                dims.append("*" + str(lit.value))
-            case "_FixedDim":
-                lit: LiteralType = arg.args[0]
-                dims.append(str(lit.value))
-            case "_SymbolicDim":
-                lit: LiteralType = arg.args[0]
-                dims.append(str(lit.value))
-    dim_str = " ".join(dims)
-    result = f"{dtype}[{backend}, '{dim_str}']"
+    shape: LiteralType = typ.args[1]
+    result = f"{dtype}[{backend}, '{shape.value}']"
     return result
