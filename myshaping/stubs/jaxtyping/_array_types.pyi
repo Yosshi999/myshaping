@@ -37,7 +37,7 @@ _AbstractDim = Union[_AnonymousDim, _NamedDim, _FixedDim, _SymbolicDim]
 
 
 _ArrayType = TypeVar("_ArrayType")
-_Shape = TypeVar("_Shape", bound=tuple[_AbstractDimOrVariadicDim, ...])
+_Shape = TypeVar("_Shape", bound=str)
 Self = TypeVar("Self", bound="AbstractArray[_ArrayType, _Shape]")
 class AbstractArray(Generic[_ArrayType, _Shape]):
     def __add__(self: Self, other: Self) -> Self: ...
