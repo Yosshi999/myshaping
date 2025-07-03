@@ -23,5 +23,15 @@ build-backend = "hatchling.build"
 
 [tool.mypy]
 ignore_missing_imports = true
-plugins = ["myshaping/check_shape_plugin.py"]
+plugins = ["myshaping.check_shape_plugin"]
 mypy_path = "myshaping/stubs"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--mypy-pyproject-toml-file=pyproject.toml"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.4.1",
+    "pytest-mypy-plugins>=3.2.0",
+]

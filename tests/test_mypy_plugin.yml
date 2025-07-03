@@ -1,0 +1,14 @@
+- case: basic_test
+  main: |
+    def func(x: int) -> str:
+        return str(x)
+    
+    result = func(42)
+    reveal_type(result)  # N: Revealed type is "builtins.str"
+
+- case: instantiate_tensor
+  main: |
+    import torch
+    from myshaping import reveal_jaxtype
+    x = torch.zeros(1, 224, 224, dtype=torch.float32)
+    reveal_jaxtype(x)  # N: Revealed type is Float32[Tensor, "1 224 224"]
