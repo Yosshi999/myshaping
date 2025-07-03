@@ -117,14 +117,14 @@ class Complex64(AbstractArray[_ArrayType, _Shape]): ...
 class Complex128(AbstractArray[_ArrayType, _Shape]): ...
 class Bool(AbstractArray[_ArrayType, _Shape]): ...
 
-# UInt = Union[UInt2[_ArrayType, _Shape], UInt4[_ArrayType, _Shape], UInt8[_ArrayType, _Shape], UInt16[_ArrayType, _Shape], UInt32[_ArrayType, _Shape], UInt64[_ArrayType, _Shape]]
-# Int = Union[Int2[_ArrayType, _Shape], Int4[_ArrayType, _Shape], Int8[_ArrayType, _Shape], Int16[_ArrayType, _Shape], Int32[_ArrayType, _Shape], Int64[_ArrayType, _Shape]]
-# Integer = Union[Int[_ArrayType, _Shape], UInt[_ArrayType, _Shape]]
-# Float = Union[Float8e4m3b11fnuz[_ArrayType, _Shape], Float8e4m3fn[_ArrayType, _Shape], Float8e4m3fnuz[_ArrayType, _Shape], Float8e5m2[_ArrayType, _Shape], Float8e5m2fnuz[_ArrayType, _Shape], BFloat16[_ArrayType, _Shape], Float16[_ArrayType, _Shape], Float32[_ArrayType, _Shape], Float64[_ArrayType, _Shape]]
-# Complex = Union[Complex64[_ArrayType, _Shape], Complex128[_ArrayType, _Shape]]
-# Inexact = Union[Float[_ArrayType, _Shape], Complex[_ArrayType, _Shape]]
-# Real = Union[Float[_ArrayType, _Shape], UInt[_ArrayType, _Shape], Int[_ArrayType, _Shape]]
-# Num = Union[Float[_ArrayType, _Shape], Complex[_ArrayType, _Shape], UInt[_ArrayType, _Shape], Int[_ArrayType, _Shape]]
+UInt = Union[UInt2[_ArrayType, _Shape], UInt4[_ArrayType, _Shape], UInt8[_ArrayType, _Shape], UInt16[_ArrayType, _Shape], UInt32[_ArrayType, _Shape], UInt64[_ArrayType, _Shape]]
+Int = Union[Int2[_ArrayType, _Shape], Int4[_ArrayType, _Shape], Int8[_ArrayType, _Shape], Int16[_ArrayType, _Shape], Int32[_ArrayType, _Shape], Int64[_ArrayType, _Shape]]
+Integer = Union[Int[_ArrayType, _Shape], UInt[_ArrayType, _Shape]]
+Float = Union[Float8e4m3b11fnuz[_ArrayType, _Shape], Float8e4m3fn[_ArrayType, _Shape], Float8e4m3fnuz[_ArrayType, _Shape], Float8e5m2[_ArrayType, _Shape], Float8e5m2fnuz[_ArrayType, _Shape], BFloat16[_ArrayType, _Shape], Float16[_ArrayType, _Shape], Float32[_ArrayType, _Shape], Float64[_ArrayType, _Shape]]
+Complex = Union[Complex64[_ArrayType, _Shape], Complex128[_ArrayType, _Shape]]
+Inexact = Union[Float[_ArrayType, _Shape], Complex[_ArrayType, _Shape]]
+Real = Union[Float[_ArrayType, _Shape], UInt[_ArrayType, _Shape], Int[_ArrayType, _Shape]]
+Num = Union[Float[_ArrayType, _Shape], Complex[_ArrayType, _Shape], UInt[_ArrayType, _Shape], Int[_ArrayType, _Shape]]
 
 # Note: not supported
 # class Shaped(Generic[_ArrayType, _Shape]): ...

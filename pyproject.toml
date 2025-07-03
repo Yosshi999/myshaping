@@ -25,4 +25,3 @@ build-backend = "hatchling.build"
 ignore_missing_imports = true
 plugins = ["myshaping/check_shape_plugin.py"]
 mypy_path = "myshaping/stubs"
-disable_error_code = ["attr-defined"]

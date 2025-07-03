@@ -1,4 +1,4 @@
-from torch._tensor import Tensor
+from torch._tensor import Tensor as Tensor
 from typing import TypeAlias, Any
 
 class dtype: ...
