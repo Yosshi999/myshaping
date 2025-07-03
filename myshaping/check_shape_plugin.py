@@ -75,19 +75,12 @@ def reveal(ctx: FunctionContext):
     ctx.api.msg.note(f'Revealed type is "{result}"', ctx.context)
     return ctx.default_return_type
 
-def hook(ctx: FunctionContext):
-    # breakpoint()
-    # (Pdb) p ctx.context.callee.node.type.arg_types[0]
-    # jaxtyping._array_types.Float64[Tensor?, Literal['3 224 224']]
-    return ctx.default_return_type
 
 class ShapePlugin(Plugin):
     def get_type_analyze_hook(self, fullname: str):
         return get_type_analyze_hook(fullname)
 
     def get_function_hook(self, fullname: str):
-        if fullname.endswith(".f"):
-            return hook
         return get_function_hook(fullname)
     
     def get_method_hook(self, fullname: str):
